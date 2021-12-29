@@ -209,14 +209,14 @@ function! mdip#MarkdownClipboardImage()
 
     " prefix dir name with filename_ (without extension)
     if exists('g:mdip_imgdir_filename_prefix') && g:mdip_imgdir_filename_prefix == 1
-        let g:mdip_final_imgdir = expand("%:r") . "_" . g:mdip_imgdir
+        let g:mdip_final_imgdir = expand("%:t:r") . "_" . g:mdip_imgdir
     else
         let g:mdip_final_imgdir = g:mdip_imgdir
     endif
     "
     " prefix dir name with filename_ (without extension)
     if exists('g:mdip_imgname_filename_prefix') && g:mdip_imgname_filename_prefix == 1
-        let g:mdip_final_imgname = expand("%:r") . "_" . g:mdip_imgname
+        let g:mdip_final_imgname = expand("%:t:r") . "_" . g:mdip_imgname
     else
         let g:mdip_final_imgname = g:mdip_imgname
     endif
