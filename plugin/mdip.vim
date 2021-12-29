@@ -7,16 +7,17 @@ function! s:IsWSL()
     return 0
 endfunction
 
-function! s:SafeMakeDir()
+function! s:SafeMakeDir(imgdir)
     if !exists('g:mdip_imgdir_absolute')
         if s:os == "Windows"
-            let outdir = expand('%:p:h') . '\' . g:mdip_imgdir
-    else
-            let outdir = expand('%:p:h') . '/' . g:mdip_imgdir
+            let outdir = expand('%:p:h') . '\' . a:imgdir
+        else
+            let outdir = expand('%:p:h') . '/' . a:imgdir
         endif
     else
-	let outdir = g:mdip_imgdir
+        let outdir = a:imgdir
     endif
+
     if !isdirectory(outdir)
         call mkdir(outdir,"p",0700)
     endif
@@ -138,10 +139,10 @@ endfunction
 
 function! s:SaveNewFile(imgdir, tmpfile)
     let extension = split(a:tmpfile, '\.')[-1]
-    let reldir = g:mdip_imgdir
+    let reldir = g:mdip_final_imgdir
     let cnt = 0
-    let filename = a:imgdir . '/' . g:mdip_imgname . cnt . '.' . extension
-    let relpath = reldir . '/' . g:mdip_imgname . cnt . '.' . extension
+    let filename = a:imgdir . '/' . g:mdip_final_imgname . cnt . '.' . extension
+    let relpath = reldir . '/' . g:mdip_final_imgname . cnt . '.' . extension
     while filereadable(filename)
         call system('diff ' . a:tmpfile . ' ' . filename)
         if !v:shell_error
@@ -149,8 +150,8 @@ function! s:SaveNewFile(imgdir, tmpfile)
             return relpath
         endif
         let cnt += 1
-        let filename = a:imgdir . '/' . g:mdip_imgname . cnt . '.' . extension
-        let relpath = reldir . '/' . g:mdip_imgname . cnt . '.' . extension
+        let filename = a:imgdir . '/' . g:mdip_final_imgname . cnt . '.' . extension
+        let relpath = reldir . '/' . g:mdip_final_imgname . cnt . '.' . extension
     endwhile
     if filereadable(a:tmpfile)
         call rename(a:tmpfile, filename)
@@ -194,7 +195,7 @@ function! g:LatexPasteImage(relpath)
 endfunction
 
 function! g:EmptyPasteImage(relpath)
-    execute "normal! i" . a:relpath 
+    execute "normal! i" . a:relpath
 endfunction
 
 let g:PasteImageFunction = 'g:MarkdownPasteImage'
@@ -206,40 +207,60 @@ function! mdip#MarkdownClipboardImage()
         let s:os = substitute(system('uname'), '\n', '', '')
     endif
 
-    let workdir = s:SafeMakeDir()
+    " prefix dir name with filename_ (without extension)
+    if exists('g:mdip_imgdir_filename_prefix') && g:mdip_imgdir_filename_prefix == 1
+        let g:mdip_final_imgdir = expand("%:r") . "_" . g:mdip_imgdir
+    else
+        let g:mdip_final_imgdir = g:mdip_imgdir
+    endif
+    "
+    " prefix dir name with filename_ (without extension)
+    if exists('g:mdip_imgname_filename_prefix') && g:mdip_imgname_filename_prefix == 1
+        let g:mdip_final_imgname = expand("%:r") . "_" . g:mdip_imgname
+    else
+        let g:mdip_final_imgname = g:mdip_imgname
+    endif
+
+    " allow a different intext reference for relative links
+    if !exists('g:mdip_imgdir_intext')
+        let g:mdip_final_imgdir_intext = g:mdip_final_imgdir
+    endif
+
+    if !exists('g:mdip_imgname_intext')
+        let g:mdip_final_imgname_intext = g:mdip_final_imgname
+    endif
+
+    let workdir = s:SafeMakeDir(g:mdip_final_imgdir)
     " change temp-file-name and image-name
     let g:mdip_tmpname = s:InputName()
     if empty(g:mdip_tmpname)
-      let g:mdip_tmpname = g:mdip_imgname . '_' . s:RandomName()
+        let g:mdip_tmpname = g:mdip_final_imgname . '_' . s:RandomName()
     endif
 
     let tmpfile = s:SaveFileTMP(workdir, g:mdip_tmpname)
     if tmpfile == 1
         return
     else
-        " let relpath = s:SaveNewFile(g:mdip_imgdir, tmpfile)
+        " let relpath = s:SaveNewFile(g:mdip_final_imgdir, tmpfile)
         let extension = split(tmpfile, '\.')[-1]
-        let relpath = g:mdip_imgdir_intext . '/' . g:mdip_tmpname . '.' . extension
+        let relpath = g:mdip_final_imgdir_intext . '/' . g:mdip_tmpname . '.' . extension
         if call(get(g:, 'PasteImageFunction'), [relpath])
             return
         endif
     endif
 endfunction
 
-if !exists('g:mdip_imgdir') && !exists('g:mdip_imgdir_absolute')
+if exists('g:mdip_imgdir_absolute')
+    "allow absolute paths. E.g., on linux: /home/path/to/imgdir/
+    let g:mdip_imgdir = g:mdip_imgdir_absolute
+elseif !exists('g:mdip_imgdir')
     let g:mdip_imgdir = 'img'
 endif
-"allow absolute paths. E.g., on linux: /home/path/to/imgdir/
-if exists('g:mdip_imgdir_absolute')
-    let g:mdip_imgdir = g:mdip_imgdir_absolute
-endif
-"allow a different intext reference for relative links
-if !exists('g:mdip_imgdir_intext')
-    let g:mdip_imgdir_intext = g:mdip_imgdir
-endif
+
 if !exists('g:mdip_tmpname')
     let g:mdip_tmpname = 'tmp'
 endif
+
 if !exists('g:mdip_imgname')
     let g:mdip_imgname = 'image'
 endif
