@@ -141,8 +141,8 @@ function! s:SaveNewFile(imgdir, tmpfile)
     let extension = split(a:tmpfile, '\.')[-1]
     let reldir = g:mdip_final_imgdir
     let cnt = 0
-    let filename = a:imgdir . '/' . g:mdip_imgname . cnt . '.' . extension
-    let relpath = reldir . '/' . g:mdip_imgname . cnt . '.' . extension
+    let filename = a:imgdir . '/' . g:mdip_final_imgname . cnt . '.' . extension
+    let relpath = reldir . '/' . g:mdip_final_imgname . cnt . '.' . extension
     while filereadable(filename)
         call system('diff ' . a:tmpfile . ' ' . filename)
         if !v:shell_error
@@ -150,8 +150,8 @@ function! s:SaveNewFile(imgdir, tmpfile)
             return relpath
         endif
         let cnt += 1
-        let filename = a:imgdir . '/' . g:mdip_imgname . cnt . '.' . extension
-        let relpath = reldir . '/' . g:mdip_imgname . cnt . '.' . extension
+        let filename = a:imgdir . '/' . g:mdip_final_imgname . cnt . '.' . extension
+        let relpath = reldir . '/' . g:mdip_final_imgname . cnt . '.' . extension
     endwhile
     if filereadable(a:tmpfile)
         call rename(a:tmpfile, filename)
@@ -213,17 +213,28 @@ function! mdip#MarkdownClipboardImage()
     else
         let g:mdip_final_imgdir = g:mdip_imgdir
     endif
+    "
+    " prefix dir name with filename_ (without extension)
+    if exists('g:mdip_imgname_filename_prefix') && g:mdip_imgname_filename_prefix == 1
+        let g:mdip_final_imgname = expand("%:r") . "_" . g:mdip_imgname
+    else
+        let g:mdip_final_imgname = g:mdip_imgname
+    endif
 
     " allow a different intext reference for relative links
     if !exists('g:mdip_imgdir_intext')
         let g:mdip_final_imgdir_intext = g:mdip_final_imgdir
     endif
 
+    if !exists('g:mdip_imgname_intext')
+        let g:mdip_final_imgname_intext = g:mdip_final_imgname
+    endif
+
     let workdir = s:SafeMakeDir(g:mdip_final_imgdir)
     " change temp-file-name and image-name
     let g:mdip_tmpname = s:InputName()
     if empty(g:mdip_tmpname)
-        let g:mdip_tmpname = g:mdip_imgname . '_' . s:RandomName()
+        let g:mdip_tmpname = g:mdip_final_imgname . '_' . s:RandomName()
     endif
 
     let tmpfile = s:SaveFileTMP(workdir, g:mdip_tmpname)

@@ -32,6 +32,13 @@ In this case, the images you copy into a file called `test.md` would be located 
 
 /!\ You can't use both `mdip_imgdir_absolute` and `mdip_imgdir_filename_prefix` at the same time.
 
+## Prefix image file name with name of the pasted file
+
+To prefix `imgname` with the name of the file, add the following to your .vimrc :
+```
+let g:mdip_imgname_filename_prefix=1
+```
+
 ### Extend to other markup languages ###
 Simply add a custom paste function that accepts the relative path to the image as an argument, and set `g:PasteImageFunction` to the name of your function. E.g.
 ```
